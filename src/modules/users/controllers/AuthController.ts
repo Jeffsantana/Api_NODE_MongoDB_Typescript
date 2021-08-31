@@ -38,7 +38,7 @@ class AuthController {
 
             user.password = undefined;
 
-            res.send({
+            return res.json({
                 user,
                 token: user.offline_access
                     ? generateToken({ _id: user._id })
