@@ -8,50 +8,65 @@ class UserController {
     }
 
     public async create(req: Request, res: Response): Promise<Response> {
-        const { name, email, roles, password } = req.body;
+        try {
+            const { name, email, roles, password } = req.body;
 
-        if (!name || !email || !password) {
+            if (!name || !email || !password) {
+                return res.status(400).send({
+                    message:
+                        'Missing form data. Please fill all the form fields and try again or contact support.',
+                });
+            }
+            if (await User.findOne({ email })) {
+                return res
+                    .status(400)
+                    .send({ message: 'Email already registered.' });
+            }
+            const user = await User.create(req.body);
+            user.password = undefined
+            return res.status(201).json(user);
+        } catch (err) {
             return res.status(400).send({
-                message:
-                    'Missing form data. Please fill all the form fields and try again or contact support.',
+                message: 'Error when creating user. Please try again or contact support.',
             });
         }
-        if (await User.findOne({ email })) {
-            return res
-                .status(400)
-                .send({ message: 'Email already registered.' });
-        }
-        const user = await User.create(req.body);
-        user.password = undefined
-        return res.status(201).json(user);
     }
 
     public async update(req: Request, res: Response): Promise<Response> {
-        const { name, email, password, active, phone_number } = req.body;
+        try {
+            const { name, email, password, active, phone_number } = req.body;
 
-        if (!name || !email || !password) {
+            if (!name || !email || !password) {
+                return res.status(400).send({
+                    message:
+                        'Missing form data. Please fill all the form fields and try again or contact support.',
+                });
+            }
+            if (await User.findOne({ _id: { $ne: req.params.id }, email })) {
+                return res
+                    .status(400)
+                    .send({ message: 'Email already registered.' });
+            }
+            const user = await User.findOneAndUpdate(
+                { _id: req.params.id },
+                {
+                    active,
+                    name,
+                    email,
+                    phone_number,
+                },
+                { new: true }
+            );
+
+            return res.status(204);
+
+
+
+        } catch (err) {
             return res.status(400).send({
-                message:
-                    'Missing form data. Please fill all the form fields and try again or contact support.',
+                message: 'Error when updating user. Please try again or contact support.',
             });
         }
-        if (await User.findOne({ _id: { $ne: req.params.id }, email })) {
-            return res
-                .status(400)
-                .send({ message: 'Email already registered.' });
-        }
-        const user = await User.findOneAndUpdate(
-            { _id: req.params.id },
-            {
-                active,
-                name,
-                email,
-                phone_number,
-            },
-            { new: true }
-        );
-
-        return res.status(204);
     }
 
     public async delete(req: Request, res: Response): Promise<Response> {
