@@ -54,7 +54,6 @@ class AuthController {
             const { token } = req.body;
 
             const check = verify(token, SECRET_KEY);
-            console.log("🚀 ~ AuthController ~ check", check);
 
             if (!check) {
                 return res.status(401).send({ auth: false, status: 'Token invalido!' });
