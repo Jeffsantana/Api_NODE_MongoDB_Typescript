@@ -1,15 +1,14 @@
 import express, { NextFunction, Request, Response } from 'express'
+import routes from './src/routes'
 import { AppError } from './shared/AppError';
+import database from './src/config/mongoose'
 
 const app = express();
 
 app.use(express.json())
 
-// app.use(router)
-
-app.get('/', (req, res) => {
-    return res.send('Hello World');
-})
+app.use(routes)
+database.mongoConnect()
 
 app.use((err: Error, request: Request, response: Response, next: NextFunction) => {
 
