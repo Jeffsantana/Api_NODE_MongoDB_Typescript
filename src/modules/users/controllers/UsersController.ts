@@ -1,10 +1,12 @@
+import { hash } from 'bcrypt';
 import { Request, Response } from 'express'
 import User from '../models/UsersModel';
+import ListUsersUseCase from '../useCases/ListUsersUseCase';
 
 class UserController {
     public async read(req: Request, res: Response): Promise<Response> {
-        const users = await User.paginate()
-        return res.json(users)
+        const user = await User.findOne({ _id: req.params.id });
+        return res.json(user)
     }
 
     public async create(req: Request, res: Response): Promise<Response> {
@@ -34,9 +36,9 @@ class UserController {
 
     public async update(req: Request, res: Response): Promise<Response> {
         try {
-            const { name, email, password, active, phone_number } = req.body;
+            const { name, email, active, phone_number } = req.body;
 
-            if (!name || !email || !password) {
+            if (!name || !email) {
                 return res.status(400).send({
                     message:
                         'Missing form data. Please fill all the form fields and try again or contact support.',
@@ -58,7 +60,45 @@ class UserController {
                 { new: true }
             );
 
-            return res.status(204);
+            return res.status(204).send();
+
+
+
+        } catch (err) {
+            return res.status(400).send({
+                message: 'Error when updating user. Please try again or contact support.',
+            });
+        }
+    }
+
+    public async upgrade(req: Request, res: Response): Promise<Response> {
+        try {
+            const _id = req.params.id;
+            const { email } = req.body;
+            const userUpgrade = {
+                active: req.body.active,
+                name: req.body.name,
+                email: req.body.email,
+                password: req.body.password?.length ? await hash(req.body.password, 10) : undefined,
+                profile: req.body.profile,
+                phone_number: req.body.phone_number,
+            };
+
+
+            if (await User.findOne({ _id: { $ne: req.params.id }, email })) {
+                return res
+                    .status(400)
+                    .send({ message: 'Email already registered.' });
+            }
+            const user = await User.findOneAndUpdate(
+                { _id },
+                {
+                    $set: userUpgrade
+                },
+                { upsert: true, new: true }
+            );
+
+            return res.status(204).send();
 
 
 
@@ -78,6 +118,11 @@ class UserController {
                 message: 'Error deleting user. Please try again or contact support.',
             });
         }
+    }
+
+    public async list(req: Request, res: Response): Promise<Response> {
+        const users = await ListUsersUseCase.execute(req)
+        return res.json(users)
     }
 
 
